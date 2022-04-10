@@ -2,6 +2,7 @@
 using Core.Services.Interface;
 using Core.UnitOfWork.Interface;
 using Microsoft.EntityFrameworkCore;
+using Service.Exceptions;
 using System.Linq.Expressions;
 
 namespace Service.Services
@@ -47,7 +48,12 @@ namespace Service.Services
 
         public async Task<T> GetByIdAsync(int id)
         {
-            return await _genericRepository.GetByIdAsync(id);
+            var hasProduct= await _genericRepository.GetByIdAsync(id);
+            if (hasProduct == null)
+            {
+                throw new NotFoundException($"{typeof(T).Name} Not Found");
+            }
+            return hasProduct;
         }
 
         public async Task RemoveAsync(T entity)
