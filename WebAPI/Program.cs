@@ -1,3 +1,5 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Core.Repositorys.Interface;
 using Core.Services;
 using Core.Services.Interface;
@@ -14,6 +16,7 @@ using Service.Validation;
 using System.Reflection;
 using WebAPI.Filters;
 using WebAPI.Middlewares;
+using WebAPI.Modules;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,17 +30,9 @@ builder.Services.Configure<ApiBehaviorOptions>(opt =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddScoped(typeof(NotFoundFilter<>));
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(Repository<>));
-builder.Services.AddScoped(typeof(IService<>), typeof(Service<>));
-builder.Services.AddScoped(typeof(IProductService), typeof(ProductService));
-builder.Services.AddScoped(typeof(IProductRepository), typeof(ProductRepository));
-builder.Services.AddScoped(typeof(ICategoryRepository), typeof(CategoryRepository));
-builder.Services.AddScoped(typeof(ICategoryService), typeof(CategoryService));
-
-
-
+builder.Services.AddMemoryCache();
 builder.Services.AddAutoMapper(typeof(MapProfile));
 builder.Services.AddDbContext<Context>(x =>
     x.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection"), options =>
@@ -45,6 +40,9 @@ builder.Services.AddDbContext<Context>(x =>
         options.MigrationsAssembly(Assembly.GetAssembly(typeof(Context)).GetName().Name);
     })
 );
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+builder.Host.ConfigureContainer<ContainerBuilder>(container => container.RegisterModule(new RepoServiceModule()));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
